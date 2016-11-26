@@ -33,6 +33,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.GyroSensor;
 import com.qualcomm.robotcore.util.Range;
 
@@ -82,6 +83,7 @@ public class MecanumBot extends OpMode {
         FR.setDirection(DcMotor.Direction.REVERSE);
         BR.setDirection(DcMotor.Direction.REVERSE);
         Shooter.setDirection(DcMotor.Direction.REVERSE);
+        Harvester.setDirection(DcMotor.Direction.REVERSE);
         gyro.calibrate();
         while(gyro.isCalibrating()){}
     }

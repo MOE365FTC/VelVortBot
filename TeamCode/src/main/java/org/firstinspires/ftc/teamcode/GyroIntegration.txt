@@ -1,0 +1,82 @@
+//--------------GYRO STUFF--------------------//
+    ModernRoboticsI2cGyro gyro;
+    double heading = 0;
+    //double gyroOffset = 66.3688;
+    double gyroOffset = 70;
+    double gyroScale = 0.017627153;
+    double gyroCheat = 1.5;
+    double dt = 0.1;//time in seconds
+    ElapsedTime runtime = new ElapsedTime();
+    double lastTime=0;
+    public Thread gyroTracker = new Thread() {
+        @Override
+        public void run() {
+            runtime.reset();
+            while(true) {
+                if(Thread.interrupted())
+                    return;
+                //Log.d("ROTVAL", String.valueOf(heading) + " " + String.valueOf(runtime.seconds()));
+                heading += ((gyro.rawZ() - gyroOffset) * gyroScale) * dt;
+                /**
+                 double modifiedSpeed = gyro.rawZ() - gyroOffset;
+                 modifiedSpeed *= gyroScale;
+                 heading += modifiedSpeed * dt;
+                 **/
+                try{
+                    Thread.sleep((long)(dt * 1000));
+                }catch(InterruptedException e){
+                    e.printStackTrace();
+                }
+                //lastTime = runtime.seconds();
+            }
+        }
+    };
+
+    public void rightTurn(double angle, double speed){
+            angle-=gyroCheat;
+            double target = heading - angle;
+            FR.setPower(-speed);
+            BR.setPower(-speed);
+            FL.setPower(speed);
+            BL.setPower(speed);
+            while(heading > target && opModeIsActive()){
+                if(heading <= target)
+                    stopDrive();
+            }
+            FR.setPower(0);
+            FL.setPower(0);
+            BR.setPower(0);
+            BL.setPower(0);
+            Log.d("ROTVAL",String.valueOf(runtime.seconds()));
+            Log.d("ROTVAL",String.valueOf(heading));
+        }
+        public void leftTurn(double angle, double speed){
+            double target = heading + angle;
+            telemetry.addData("target",target);
+            while(opModeIsActive() && !inTolBand(heading,target,0.5)){
+                    telemetry.addData("heading",heading);
+                    telemetry.update();
+                    if (heading < target){
+                        //Left turn
+                        FR.setPower(speed);
+                        BR.setPower(speed);
+                        FL.setPower(-speed);
+                        BL.setPower(-speed);
+                    }
+                    else if(heading > target){//overturn correction
+                        FR.setPower(-0.2);
+                        BR.setPower(-0.2);
+                        FL.setPower(0.2);
+                        BL.setPower(0.2);
+                    }
+                    idle();
+            }
+            stopDrive();
+        }
+
+        public boolean inTolBand(double val1, double val2, double tolBand){
+            if(Math.abs(val1-val2) <= tolBand)
+                return true;
+            else
+                return false;
+        }
