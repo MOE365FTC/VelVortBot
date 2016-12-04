@@ -72,6 +72,7 @@ public class AutonomousMove extends LinearOpMode {
         beaconSensor.setI2cAddress(I2cAddr.create8bit(0x3c));
 
         Shooter.setDirection(DcMotorSimple.Direction.REVERSE);
+        Harvester.setDirection(DcMotorSimple.Direction.REVERSE);
         FR.setDirection(DcMotorSimple.Direction.REVERSE);
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
         Shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);

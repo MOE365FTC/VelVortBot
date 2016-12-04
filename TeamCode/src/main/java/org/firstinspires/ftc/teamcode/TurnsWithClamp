@@ -1,0 +1,57 @@
+final int MAXTURN = 350;
+    final int TURNTOLERANCE = 1;
+    public void rightTurnWithClamp(double angle, double speed){
+        boolean zeroCrossing = false;
+        double start = gyro.getHeading();
+        double target = start - angle;
+        if (target < 0) {
+            zeroCrossing = true;
+            target += 360;
+        }
+        if(zeroCrossing){//turn to be at 0 degrees
+            FR.setPower(-speed);
+            BL.setPower(speed);
+            FR.setPower(speed);
+            BL.setPower(-speed);
+            while(opModeIsActive() && gyro.getHeading() <= start + TURNTOLERANCE){
+                idle();
+            }
+            stopDrive();
+        }
+        FR.setPower(-speed);
+        BL.setPower(speed);
+        FR.setPower(speed);
+        BL.setPower(-speed);
+        while((opModeIsActive())&&(gyro.getHeading() > target) && ((gyro.getHeading() - target) <= MAXTURN)){
+            idle();
+        }
+        stopDrive();
+    }
+
+    public void leftTurnWithClamp(double angle, double speed){
+        boolean zeroCrossing = false;
+        double start = gyro.getHeading();
+        double target = start + angle;
+        if(target > 360){
+            zeroCrossing = true;
+            target %= 360;
+        }
+        if(zeroCrossing){
+            FR.setPower(speed);
+            BL.setPower(-speed);
+            FR.setPower(-speed);
+            BL.setPower(speed);
+            while(opModeIsActive() && gyro.getHeading() >= start - TURNTOLERANCE){
+                idle();
+            }
+            stopDrive();
+        }
+        FR.setPower(speed);
+        BL.setPower(-speed);
+        FR.setPower(-speed);
+        BL.setPower(speed);
+        while(opModeIsActive() && gyro.getHeading() < target && ((target - gyro.getHeading())<=MAXTURN)){
+            idle();
+        }
+        stopDrive();
+    }

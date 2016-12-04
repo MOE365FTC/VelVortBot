@@ -33,6 +33,7 @@ package org.firstinspires.ftc.teamcode;
 
 import android.util.Log;
 
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cColorSensor;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -46,14 +47,16 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 //@Disabled                            // Comment this out to add to the opmode list
 public class AutonRed extends LinearOpMode {
     DcMotor FR,FL,BR,BL,Shooter,Harvester;
-    ColorSensor beaconSensor;
+    ModernRoboticsI2cColorSensor beaconSensor;
+    ModernRoboticsI2cColorSensor lineSensor;
+    I2cAddr beaconAddress = I2cAddr.create8bit(0x3c);
+    I2cAddr lineAddress = I2cAddr.create8bit(0x4c);
     ModernRoboticsI2cGyro gyro;
-    //ColorSensor lineSensor
-    float lineHsvValues[] = {0F,0F,0F};
-    float beaconHsvValues[] = {0F,0F,0F};
     double shooterPower = 0.8;
     double harvesterPower = 0.6;
-
+    double ticsPerInch = 38.5;
+    double strafeTicsPerInch = 60;
+    ElapsedTime runtime = new ElapsedTime();
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -65,12 +68,13 @@ public class AutonRed extends LinearOpMode {
         BL = hardwareMap.dcMotor.get("BL");
         Shooter = hardwareMap.dcMotor.get("Sh");
         Harvester = hardwareMap.dcMotor.get("Ha");
-        //lineSensor = hardwareMap.colorSensor.get("lineSense");
-        beaconSensor = hardwareMap.colorSensor.get("beaconSense");
-        //lineSensor.setI2cAddress(I2cAddr.create8bit(0x4c));
-        beaconSensor.setI2cAddress(I2cAddr.create8bit(0x3c));
+        lineSensor = (ModernRoboticsI2cColorSensor)hardwareMap.colorSensor.get("lineSense");
+        beaconSensor = (ModernRoboticsI2cColorSensor)hardwareMap.colorSensor.get("beaconSense");
+        lineSensor.setI2cAddress(lineAddress);
+        beaconSensor.setI2cAddress(beaconAddress);
 
         Shooter.setDirection(DcMotorSimple.Direction.REVERSE);
+        Harvester.setDirection(DcMotorSimple.Direction.REVERSE);
         FR.setDirection(DcMotorSimple.Direction.REVERSE);
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
         Shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -81,26 +85,76 @@ public class AutonRed extends LinearOpMode {
         telemetry.addData(">", "Gyro Calibrating. Do Not move!");
         telemetry.update();
         gyro.calibrate();
-
         while (!isStopRequested() && gyro.isCalibrating())  {
             sleep(50);
             idle();
         }
-        telemetry.addData(">", "Gyro Calibrated, Tracking Starte.");
+        telemetry.addData(">", "Gyro Calibrated, Tracking Started.");
         telemetry.update();
         waitForStart();
-        rightTurn(45, 0.25);
-        try{
-            Thread.sleep(1000);
-        }catch(InterruptedException e){
-            e.printStackTrace();
+        /*****************************************************************/
+        shootBalls();
+        moveRightInches(5,0.5);
+        FL.setPower(.25);
+        BL.setPower(.25);
+        while(opModeIsActive() && gyro.getIntegratedZValue() > -45){
+            idle();
         }
-        /***
+        stopDrive();
+        Thread.sleep(100);
+        moveForwardInches(63,0.3);
+        Thread.sleep(100);
+        rightTurn(83-Math.abs(gyro.getIntegratedZValue()),0.2);
+        Thread.sleep(100);
+        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        moveLeftInches(4,0.5);
+        Thread.sleep(100);
+        startBackward(0.2);
+        while(opModeIsActive() && lineSensor.green() == 0){
+            idle();
+        }
+        stopDrive();
+        Thread.sleep(100);
+        pressBeacon(0.5);
+        moveForwardInches(20,0.3);
+        startForward(0.2);
+        while(opModeIsActive() && lineSensor.green() == 0){
+            idle();
+        }
+        stopDrive();
+        moveBackwardInches(2,0.3);
+        pressBeacon(0.5);
+        moveBackwardInches(108,0.5);
+         /*************************************************************/
+    }
+
+    public void pressBeacon(double speed){
+        if(beaconSensor.red() > beaconSensor.blue()){//IF READING RED
+            moveForwardInches(1,0.2);
+            runtime.reset();
+            startLeft(speed);
+            while(opModeIsActive() && runtime.seconds() < 2){
+                idle();
+            }
+            stopDrive();
+            moveRightInches(6,0.5);
+        }
+        else{
+            moveForwardInches(4,0.3);
+            runtime.reset();
+            startLeft(speed);
+            while(opModeIsActive() && runtime.seconds() < 2){
+                idle();
+            }
+            stopDrive();
+            moveRightInches(6,0.5);
+        }
+    }
+
+    public void shootBalls(){
         Shooter.setTargetPosition(1650);
         Shooter.setPower(shooterPower);
         while(opModeIsActive() && Shooter.isBusy()){
-            telemetry.addData("pos",Shooter.getCurrentPosition());
-            telemetry.update();
             idle();
         }
         Shooter.setPower(0);
@@ -113,31 +167,17 @@ public class AutonRed extends LinearOpMode {
         Shooter.setTargetPosition(3300);
         Shooter.setPower(shooterPower);
         while(opModeIsActive() && Shooter.isBusy()){
-            telemetry.addData("pos",Shooter.getCurrentPosition());
-            telemetry.update();
             idle();
         }
         Shooter.setPower(0);
-        runtime.reset();
-        while(opModeIsActive() && runtime.seconds() < 5){
-            idle();
-        }
-        runtime.reset();
-        //change                                     this one
-        while(opModeIsActive() && runtime.seconds() < 4.5){
-            startRight(0.6);
-            idle();
-        }
-        stopDrive();
-         ***/
     }
 
     public void rightTurn(double angle, double speed){
         double target = gyro.getIntegratedZValue() - angle;
         FR.setPower(-speed);
+        FL.setPower(speed);
+        BR.setPower(-speed);
         BL.setPower(speed);
-        FR.setPower(speed);
-        BL.setPower(-speed);
         while(opModeIsActive() && gyro.getIntegratedZValue() > target){
             idle();
         }
@@ -147,67 +187,60 @@ public class AutonRed extends LinearOpMode {
     public void leftTurn(double angle, double speed){
         double target = gyro.getIntegratedZValue() + angle;
         FR.setPower(speed);
+        FL.setPower(-speed);
+        BR.setPower(speed);
         BL.setPower(-speed);
-        FR.setPower(-speed);
-        BL.setPower(speed);
         while(opModeIsActive() && gyro.getIntegratedZValue() < target){
             idle();
         }
         stopDrive();
     }
-    final int MAXTURN = 350;
-    final int TURNTOLERANCE = 1;
-    public void rightTurnWithClamp(double angle, double speed){
-        boolean zeroCrossing = false;
-        double start = gyro.getHeading();
-        double target = start - angle;
-        if (target < 0) {
-            zeroCrossing = true;
-            target += 360;
+
+    public void moveRightInches(double inches, double speed){
+        double target = -inches * strafeTicsPerInch;
+        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        while(FR.getCurrentPosition()!=0){
+            idle();
         }
-        if(zeroCrossing){//turn to be at 0 degrees
-            FR.setPower(-speed);
-            BL.setPower(speed);
-            FR.setPower(speed);
-            BL.setPower(-speed);
-            while(opModeIsActive() && gyro.getHeading() <= start + TURNTOLERANCE){
-                idle();
-            }
-            stopDrive();
-        }
-        FR.setPower(-speed);
-        BL.setPower(speed);
-        FR.setPower(speed);
-        BL.setPower(-speed);
-        while((opModeIsActive())&&(gyro.getHeading() > target) && ((gyro.getHeading() - target) <= MAXTURN)){
+        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        startRight(speed);
+        while(opModeIsActive() && FR.getCurrentPosition() > target){
             idle();
         }
         stopDrive();
     }
 
-    public void leftTurnWithClamp(double angle, double speed){
-        boolean zeroCrossing = false;
-        double start = gyro.getHeading();
-        double target = start + angle;
-        if(target > 360){
-            zeroCrossing = true;
-            target %= 360;
+    public void moveLeftInches(double inches, double speed){
+        double target = inches * strafeTicsPerInch;
+        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        while(FR.getCurrentPosition()!=0){
+            idle();
         }
-        if(zeroCrossing){
-            FR.setPower(speed);
-            BL.setPower(-speed);
-            FR.setPower(-speed);
-            BL.setPower(speed);
-            while(opModeIsActive() && gyro.getHeading() >= start - TURNTOLERANCE){
-                idle();
-            }
-            stopDrive();
+        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        startLeft(speed);
+        while(opModeIsActive() && FR.getCurrentPosition() < target){
+            idle();
         }
-        FR.setPower(speed);
-        BL.setPower(-speed);
-        FR.setPower(-speed);
-        BL.setPower(speed);
-        while(opModeIsActive() && gyro.getHeading() < target && ((target - gyro.getHeading())<=MAXTURN)){
+        stopDrive();
+    }
+
+    public void moveForwardInches(double inches, double speed){
+        double target = inches * ticsPerInch;
+        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        startForward(speed);
+        while(opModeIsActive() && FR.getCurrentPosition() < target){
+            idle();
+        }
+        stopDrive();
+    }
+
+    public void moveBackwardInches(double inches, double speed){
+        double target = inches*ticsPerInch;
+        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        startBackward(speed);
+        while(opModeIsActive() && FR.getCurrentPosition() > -target){
             idle();
         }
         stopDrive();
@@ -229,9 +262,16 @@ public class AutonRed extends LinearOpMode {
 
     public void startRight(double speed){
         FR.setPower(-speed);
+        BL.setPower(-(speed+.1));
+        BR.setPower(speed+.1);
         FL.setPower(speed);
-        BR.setPower(speed);
-        BL.setPower(-speed);
+    }
+
+    public void startLeft(double speed){
+        FR.setPower(speed+.1);
+        BL.setPower(speed);
+        FL.setPower(-(speed+.1));
+        BR.setPower(-speed);
     }
 
     public void stopDrive(){
