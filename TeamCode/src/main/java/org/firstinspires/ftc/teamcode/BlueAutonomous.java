@@ -31,128 +31,135 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 package org.firstinspires.ftc.teamcode;
 
-import android.util.Log;
-
-import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cColorSensor;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.GyroSensor;
 import com.qualcomm.robotcore.hardware.I2cAddr;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name = "AutonomousRed", group = "Auton")
+@Autonomous(name = "Blue Autonomous", group = "Auton")
 //@Disabled                            // Comment this out to add to the opmode list
-public class AutonRed extends LinearOpMode {
-    DcMotor FR,FL,BR,BL,Shooter,Harvester;
-    ModernRoboticsI2cColorSensor beaconSensor;
-    ModernRoboticsI2cColorSensor lineSensor;
-    I2cAddr beaconAddress = I2cAddr.create8bit(0x3c);
-    I2cAddr lineAddress = I2cAddr.create8bit(0x4c);
-    ModernRoboticsI2cGyro gyro;
-    double shooterPower = 0.8;
-    double harvesterPower = 0.6;
-    double ticsPerInch = 38.5;
-    double strafeTicsPerInch = 60;
+public class BlueAutonomous extends LinearOpMode {
     ElapsedTime runtime = new ElapsedTime();
+    ModernRoboticsI2cGyro gyro;
+    ColorSensor beaconSensor, lineSensor;
+    DcMotor FL;
+    DcMotor FR;
+    DcMotor BL;
+    DcMotor BR;
+    DcMotor Shooter;
+    DcMotor Harvester;
+    Servo beaconPusher;
+
+    double ticsPerInch = 38.5;
+    double strafeTicsPerInch = 53;
+
+    double leftPos = .66;
+    double rightPos = .3;
+
+    //sets default Powers
+    double shooterPower = 1;
+    double harvesterPower = 1;
+    int shooterRot = 1625;
     @Override
     public void runOpMode() throws InterruptedException {
 
-        // get a reference to our DeviceInterfaceModule object.
-        gyro = (ModernRoboticsI2cGyro)hardwareMap.gyroSensor.get("gyro");
-        FR = hardwareMap.dcMotor.get("FR");
-        FL = hardwareMap.dcMotor.get("FL");
-        BR = hardwareMap.dcMotor.get("BR");
-        BL = hardwareMap.dcMotor.get("BL");
         Shooter = hardwareMap.dcMotor.get("Sh");
         Harvester = hardwareMap.dcMotor.get("Ha");
-        lineSensor = (ModernRoboticsI2cColorSensor)hardwareMap.colorSensor.get("lineSense");
-        beaconSensor = (ModernRoboticsI2cColorSensor)hardwareMap.colorSensor.get("beaconSense");
-        lineSensor.setI2cAddress(lineAddress);
-        beaconSensor.setI2cAddress(beaconAddress);
-
-        Shooter.setDirection(DcMotorSimple.Direction.REVERSE);
-        Harvester.setDirection(DcMotorSimple.Direction.REVERSE);
-        FR.setDirection(DcMotorSimple.Direction.REVERSE);
-        BR.setDirection(DcMotorSimple.Direction.REVERSE);
-        Shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        idle();
+        gyro = (ModernRoboticsI2cGyro)hardwareMap.gyroSensor.get("gyro");
+        FL = hardwareMap.dcMotor.get("FL");
+        FR = hardwareMap.dcMotor.get("FR");
+        BL = hardwareMap.dcMotor.get("BL");
+        BR = hardwareMap.dcMotor.get("BR");
+        beaconPusher = hardwareMap.servo.get("beaconPush");
+        FR.setDirection(DcMotor.Direction.REVERSE);
+        BR.setDirection(DcMotor.Direction.REVERSE);
+        Harvester.setDirection(DcMotor.Direction.REVERSE);
+        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         Shooter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        // set the digital channel to output mode.
-        telemetry.addData(">", "Gyro Calibrating. Do Not move!");
-        telemetry.update();
+        beaconSensor = hardwareMap.colorSensor.get("beaconSense");
+        lineSensor = hardwareMap.colorSensor.get("lineSense");
+        lineSensor.setI2cAddress(I2cAddr.create8bit(0x4c));
+        beaconSensor.setI2cAddress(I2cAddr.create8bit(0x3c));
+        beaconPusher.setPosition(0);
         gyro.calibrate();
-        while (!isStopRequested() && gyro.isCalibrating())  {
-            sleep(50);
+        while(gyro.isCalibrating()){
             idle();
         }
-        telemetry.addData(">", "Gyro Calibrated, Tracking Started.");
-        telemetry.update();
+        beaconSensor.enableLed(false);
+        lineSensor.enableLed(true);
         waitForStart();
-        /*****************************************************************/
-        shootBalls();
-        moveRightInches(5,0.5);
-        FL.setPower(.25);
-        BL.setPower(.25);
-        while(opModeIsActive() && gyro.getIntegratedZValue() > -45){
+        moveRightInches(30,0.8);
+        Thread.sleep(100);
+        pointToZero();
+        Thread.sleep(100);
+        moveBackwardInches(36,0.5);
+        Thread.sleep(500);
+        startRight(0.6);
+        while(lineSensor.green() == 0){
             idle();
         }
         stopDrive();
         Thread.sleep(100);
-        moveForwardInches(63,0.3);
+        moveLeftInches(2,0.5);
+        pointToZero();
         Thread.sleep(100);
-        rightTurn(83-Math.abs(gyro.getIntegratedZValue()),0.2);
-        Thread.sleep(100);
-        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        moveLeftInches(4,0.5);
-        Thread.sleep(100);
-        startBackward(0.2);
-        while(opModeIsActive() && lineSensor.green() == 0){
-            idle();
-        }
-        stopDrive();
-        Thread.sleep(100);
-        pressBeacon(0.5);
-        moveForwardInches(20,0.3);
-        startForward(0.2);
-        while(opModeIsActive() && lineSensor.green() == 0){
-            idle();
-        }
-        stopDrive();
-        moveBackwardInches(2,0.3);
-        pressBeacon(0.5);
-        moveBackwardInches(108,0.5);
-         /*************************************************************/
-    }
-
-    public void pressBeacon(double speed){
-        if(beaconSensor.red() > beaconSensor.blue()){//IF READING RED
-            moveForwardInches(1,0.2);
-            runtime.reset();
-            startLeft(speed);
-            while(opModeIsActive() && runtime.seconds() < 2){
-                idle();
-            }
-            stopDrive();
-            moveRightInches(6,0.5);
+        moveBackwardInches(5,0.2);
+        if(beaconSensor.blue() >= 2 || beaconSensor.red() >= 2){
+            pushBeaconBlue();
         }
         else{
-            moveForwardInches(4,0.3);
-            runtime.reset();
-            startLeft(speed);
-            while(opModeIsActive() && runtime.seconds() < 2){
-                idle();
-            }
-            stopDrive();
-            moveRightInches(6,0.5);
+            moveBackwardInches(2,0.2);
+            pushBeaconBlue();
         }
+        pointToZero();
+        Thread.sleep(250);
+        moveRightInches(36,0.6);
+        startRight(0.6);
+        while(lineSensor.green() == 0){
+            idle();
+        }
+        stopDrive();
+        Thread.sleep(100);
+        moveLeftInches(2,0.5);
+        pointToZero();
+        Thread.sleep(100);
+
+    }
+
+    public void pushBeaconBlue() throws  InterruptedException{
+        if(beaconSensor.blue() > beaconSensor.red()) {
+            beaconPusher.setPosition(leftPos);
+            Thread.sleep(500);
+        }
+        else {
+            beaconPusher.setPosition(rightPos);
+            Thread.sleep(500);
+        }
+        runtime.reset();
+        startBackward(0.2);
+        while(opModeIsActive() && runtime.seconds() < 2){
+            idle();
+        }
+        moveForwardInches(5,0.2);
+    }
+
+    public void pointToZero(){
+        double angle = gyro.getIntegratedZValue();
+        if(angle > 0)//If we're pointed left, do right turn
+            rightTurn(angle,0.20);
+        else if(angle < 0)//If we're pointed right, do left turn
+            leftTurn(Math.abs(angle),0.20);
     }
 
     public void shootBalls(){
-        Shooter.setTargetPosition(1650);
+        Shooter.setTargetPosition(Shooter.getCurrentPosition() + shooterRot);
         Shooter.setPower(shooterPower);
         while(opModeIsActive() && Shooter.isBusy()){
             idle();
@@ -164,12 +171,59 @@ public class AutonRed extends LinearOpMode {
             idle();
         }
         Harvester.setPower(0);
-        Shooter.setTargetPosition(3300);
+        Shooter.setTargetPosition(Shooter.getCurrentPosition() + shooterRot);
         Shooter.setPower(shooterPower);
         while(opModeIsActive() && Shooter.isBusy()){
             idle();
         }
         Shooter.setPower(0);
+        runtime.reset();
+        while(opModeIsActive() && (runtime.seconds() < 2.0)){
+            Harvester.setPower(harvesterPower);
+            idle();
+        }
+        Harvester.setPower(0);
+        Shooter.setTargetPosition(Shooter.getCurrentPosition() + shooterRot);
+        Shooter.setPower(shooterPower);
+        while(opModeIsActive() && Shooter.isBusy()){
+            idle();
+        }
+        Shooter.setPower(0);
+    }
+
+    public void startForward(double speed){
+        FR.setPower(speed);
+        FL.setPower(speed);
+        BR.setPower(speed);
+        BL.setPower(speed);
+    }
+
+    public void startBackward(double speed){
+        FR.setPower(-speed);
+        FL.setPower(-speed);
+        BR.setPower(-speed);
+        BL.setPower(-speed);
+    }
+
+    public void startRight(double speed){
+        FR.setPower(-speed);
+        FL.setPower(speed);
+        BR.setPower(speed);
+        BL.setPower(-speed);
+    }
+
+    public void startLeft(double speed){
+        FR.setPower(speed);
+        FL.setPower(-speed);
+        BR.setPower(-speed);
+        BL.setPower(speed);
+    }
+
+    public void stopDrive(){
+        FR.setPower(0);
+        FL.setPower(0);
+        BR.setPower(0);
+        BL.setPower(0);
     }
 
     public void rightTurn(double angle, double speed){
@@ -196,10 +250,13 @@ public class AutonRed extends LinearOpMode {
         stopDrive();
     }
 
+
     public void moveRightInches(double inches, double speed){
         double target = -inches * strafeTicsPerInch;
         FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         while(FR.getCurrentPosition()!=0){
+            telemetry.addData("BR",BR.getCurrentPosition());
+            telemetry.update();
             idle();
         }
         FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -244,41 +301,6 @@ public class AutonRed extends LinearOpMode {
             idle();
         }
         stopDrive();
-    }
-
-    public void startForward(double speed){
-        FR.setPower(speed);
-        FL.setPower(speed);
-        BR.setPower(speed);
-        BL.setPower(speed);
-    }
-
-    public void startBackward(double speed){
-        FR.setPower(-speed);
-        FL.setPower(-speed);
-        BR.setPower(-speed);
-        BL.setPower(-speed);
-    }
-
-    public void startRight(double speed){
-        FR.setPower(-speed);
-        BL.setPower(-(speed));
-        BR.setPower(speed);
-        FL.setPower(speed);
-    }
-
-    public void startLeft(double speed){
-        FR.setPower(speed);
-        BL.setPower(speed);
-        FL.setPower(-(speed));
-        BR.setPower(-speed);
-    }
-
-    public void stopDrive(){
-        FR.setPower(0);
-        FL.setPower(0);
-        BR.setPower(0);
-        BL.setPower(0);
     }
 
 }
