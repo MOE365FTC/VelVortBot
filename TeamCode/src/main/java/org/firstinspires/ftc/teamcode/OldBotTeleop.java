@@ -30,6 +30,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -38,12 +39,12 @@ import com.qualcomm.robotcore.hardware.GyroSensor;
 import com.qualcomm.robotcore.util.Range;
 
 @TeleOp(name = "Mecanum Bot", group = "TeleOp")
-
+@Disabled
  /* TeleOp Mode
  * <p>
  * Enables control of the robot via the gamepad
  */
-public class MecanumBot extends OpMode {
+public class OldBotTeleOp extends OpMode {
     //Gyro thread stuff
 
     GyroSensor gyro;
@@ -60,7 +61,7 @@ public class MecanumBot extends OpMode {
     /**
      * Constructor
      */
-    public MecanumBot()
+    public OldBotTeleOp()
     {
 
     }

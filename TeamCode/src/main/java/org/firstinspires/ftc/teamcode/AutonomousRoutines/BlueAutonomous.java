@@ -29,24 +29,26 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.AutonomousRoutines;
 
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.GyroSensor;
 import com.qualcomm.robotcore.hardware.I2cAddr;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@Autonomous(name = "Red Autonomous", group = "Auton")
+@Autonomous(name = "Blue Autonomous", group = "Auton")
 //@Disabled                            // Comment this out to add to the opmode list
-public class RedAutonomous extends LinearOpMode {
+public class BlueAutonomous extends LinearOpMode {
     ElapsedTime runtime = new ElapsedTime();
     ModernRoboticsI2cGyro gyro;
     ModernRoboticsI2cRangeSensor ultrasonic;
@@ -62,7 +64,7 @@ public class RedAutonomous extends LinearOpMode {
     double ticsPerInch = 38.5;
     double strafeTicsPerInch = 53;
 
-    double leftPos = .7;
+    double leftPos = .8;
     double rightPos = .3;
 
     //sets default Powers
@@ -84,7 +86,7 @@ public class RedAutonomous extends LinearOpMode {
         FR.setDirection(DcMotor.Direction.REVERSE);
         BR.setDirection(DcMotor.Direction.REVERSE);
         Harvester.setDirection(DcMotor.Direction.REVERSE);
-        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         Shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         beaconSensor = hardwareMap.colorSensor.get("beaconSense");
         lineSensor = hardwareMap.colorSensor.get("lineSense");
@@ -99,71 +101,76 @@ public class RedAutonomous extends LinearOpMode {
         lineSensor.enableLed(true);
         waitForStart();
         shootBalls();
-        moveRightInches(23,0.8);//initial strafe off wall
+        gyro.resetZAxisIntegrator();
+        moveRightInches(33,0.8);//initial strafe off wall
         Thread.sleep(100);
-        rightTurn(30, 0.3);
+        pointToZero();//reorient straight
         Thread.sleep(100);
-        moveForwardInches(20,0.6);
-        Thread.sleep(100);
-        rightTurn(150,0.3);
-        Thread.sleep(100);
-        pointToOneEighty();
-        startBackward(0.2);
-        while(ultrasonic.getDistance(DistanceUnit.INCH) > 14){
-            idle();
-        }
-        stopDrive();
+        moveBackwardInches(36,0.5);//reverse towards ramp
         Thread.sleep(500);
-        startLeft(0.6);//move to white line
-        while(lineSensor.green() == 0){
+        moveRightInches(6,0.7);//Move past ramp
+        Thread.sleep(100);
+        pointToZero();//align to 0 to take reading
+        startBackward(0.2);
+        while(ultrasonic.getDistance(DistanceUnit.INCH) > 12){
+            idle();
+        }
+        stopDrive();
+        startRight(0.6);//move to white line
+        int floorReading = lineSensor.green();
+        while(opModeIsActive() && lineSensor.green() <= floorReading){
+            if(ultrasonic.getDistance(DistanceUnit.INCH) > 15) {
+                startBackward(0.3);
+            }
+            else
+                startRight(0.6);
             idle();
         }
         stopDrive();
         Thread.sleep(100);
-        moveRightInches(1,0.5);//re-center on beacon
-        pointToOneEighty();//re-align to zero
+        moveLeftInches(2,0.6);//re-center on beacon
+        pointToZero();//re-align to zero
         Thread.sleep(100);
         double wallDist = ultrasonic.getDistance(DistanceUnit.INCH);//store distance from wall
         if(wallDist < 6)//if too close
             moveForwardInches(6-wallDist,0.3);//move away
         else if(wallDist > 6)//if too far
             moveBackwardInches(wallDist-6,0.3);//move in
-        pointToOneEighty();
-        pushBeaconRed();//Press beacon after making decision of side
-        pointToOneEighty();//realign to zero
-        moveForwardInches(12,0.2);
+        pointToZero();
+        pushBeaconBlue();//Press beacon after making decision of side
+        pointToZero();//realign to zero
+        moveForwardInches(10,0.2);
         Thread.sleep(250);
         beaconPusher.setPosition(1);
-        moveLeftInches(36,0.8);//move towards second beacon
-        pointToOneEighty();//align to 0 to take reading
+        moveRightInches(36,1);//move towards second beacon
+        pointToZero();//align to 0 to take reading
         startBackward(0.2);
         while(ultrasonic.getDistance(DistanceUnit.INCH) > 11){
             idle();
         }
         stopDrive();
-        startLeft(0.6);//move to second white line
-        while(opModeIsActive() && lineSensor.green() == 0){
+        startRight(0.6);//move to second white line
+        floorReading = lineSensor.green();
+        while(opModeIsActive() && lineSensor.green() <= floorReading){
             idle();
         }
         stopDrive();
         Thread.sleep(100);
-        moveRightInches(2,0.5);//recenter on white line
-        pointToOneEighty();//realign to zero
+        moveLeftInches(3,0.6);//recenter on white line
+        pointToZero();//realign to zero
         Thread.sleep(100);
         wallDist = ultrasonic.getDistance(DistanceUnit.INCH);//store distance from wall
         if(wallDist < 6)//if too close
             moveForwardInches(6-wallDist,0.3);//move away
         else if(wallDist > 6)//if too far
             moveBackwardInches(wallDist-6,0.3);//move in
-        pointToOneEighty();
-        pushBeaconRed();//press second beacon
+        pushBeaconBlue();//press second beacon
         moveForwardInches(5,1);
-        rightTurn(15,0.5);
-        moveForwardInches(52,1);
+
     }
 
-    public void pushBeaconRed() throws  InterruptedException{
-        if(beaconSensor.red() > beaconSensor.blue()) {
+    public void pushBeaconBlue() throws  InterruptedException{
+        if(beaconSensor.blue() > beaconSensor.red()) {
             beaconPusher.setPosition(leftPos);
             Thread.sleep(500);
         }
@@ -178,17 +185,12 @@ public class RedAutonomous extends LinearOpMode {
         }
     }
 
-    public void pointToOneEighty() throws InterruptedException{//We sit at negative 180 as our "zero" heading
+    public void pointToZero(){
         double angle = gyro.getIntegratedZValue();
-        if (angle > -180) {//if pointed left, do a right turn
-            telemetry.addData("ANGLE",angle);
-            rightTurn(Math.abs(angle + 180), 0.25);
-            Thread.sleep(100);
-        }
-        else {//if pointed right, do a left turn
-            leftTurn(Math.abs(angle + 180), 0.25);
-            Thread.sleep(100);
-        }
+        if(angle > 0)//If we're pointed left, do right turn
+            rightTurn(angle,0.25);
+        else if(angle < 0)//If we're pointed right, do left turn
+            leftTurn(Math.abs(angle),0.25);
     }
 
     public void shootBalls(){
@@ -197,7 +199,7 @@ public class RedAutonomous extends LinearOpMode {
         Shooter.setPower(shooterPower);
         while(opModeIsActive() && Shooter.getCurrentPosition() < shooterRot){
             int pos = Shooter.getCurrentPosition();
-            if(pos > 200 && pos < shooterRot - 25)
+            if(pos > 50 && pos < shooterRot - 25)
                 Harvester.setPower(harvesterPower);
             else
                 Harvester.setPower(0);
@@ -210,9 +212,24 @@ public class RedAutonomous extends LinearOpMode {
         }
         Harvester.setPower(0);
         Shooter.setPower(shooterPower);
-        while(opModeIsActive() && Shooter.getCurrentPosition() < shooterRot+1000){
+        while(opModeIsActive() && Shooter.getCurrentPosition() < shooterRot*2){
+            int pos = Shooter.getCurrentPosition();
+            if(pos > shooterRot+50 && pos < shooterRot*2 - 25)
+                Harvester.setPower(harvesterPower);
+            else
+                Harvester.setPower(0);
+        }
+        Shooter.setPower(0);
+        Harvester.setPower(harvesterPower);
+        runtime.reset();
+        while(opModeIsActive() && runtime.seconds() < 0.5){
             idle();
         }
+        Shooter.setPower(shooterPower);
+        while(opModeIsActive() && Shooter.getCurrentPosition() < shooterRot*2+1000){
+            idle();
+        }
+        Harvester.setPower(0);
         Shooter.setPower(0);
     }
 
@@ -264,7 +281,6 @@ public class RedAutonomous extends LinearOpMode {
     }
 
     public void leftTurn(double angle, double speed){
-        double start = gyro.getHeading();
         double target = gyro.getIntegratedZValue() + angle;
         FR.setPower(speed);
         FL.setPower(-speed);
@@ -279,15 +295,15 @@ public class RedAutonomous extends LinearOpMode {
 
     public void moveRightInches(double inches, double speed){
         double target = -inches * strafeTicsPerInch;
-        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        while(FR.getCurrentPosition()!=0){
-            telemetry.addData("BR",BR.getCurrentPosition());
-            telemetry.update();
-            idle();
-        }
-        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         startRight(speed);
-        while(opModeIsActive() && FR.getCurrentPosition() > target){
+        while(opModeIsActive() && FL.getCurrentPosition() < target){
+            telemetry.addData("FR",FR.getCurrentPosition());
+            telemetry.addData("BR",BR.getCurrentPosition());
+            telemetry.addData("FL",FL.getCurrentPosition());
+            telemetry.addData("BL",BL.getCurrentPosition());
+            telemetry.update();
             idle();
         }
         stopDrive();
@@ -295,13 +311,10 @@ public class RedAutonomous extends LinearOpMode {
 
     public void moveLeftInches(double inches, double speed){
         double target = inches * strafeTicsPerInch;
-        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        while(FR.getCurrentPosition()!=0){
-            idle();
-        }
-        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         startLeft(speed);
-        while(opModeIsActive() && FR.getCurrentPosition() < target){
+        while(opModeIsActive() && FL.getCurrentPosition() > target){
             idle();
         }
         stopDrive();
@@ -309,10 +322,10 @@ public class RedAutonomous extends LinearOpMode {
 
     public void moveForwardInches(double inches, double speed){
         double target = inches * ticsPerInch;
-        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         startForward(speed);
-        while(opModeIsActive() && FR.getCurrentPosition() < target){
+        while(opModeIsActive() && FL.getCurrentPosition() < target){
             idle();
         }
         stopDrive();
@@ -320,10 +333,10 @@ public class RedAutonomous extends LinearOpMode {
 
     public void moveBackwardInches(double inches, double speed){
         double target = inches*ticsPerInch;
-        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         startBackward(speed);
-        while(opModeIsActive() && FR.getCurrentPosition() > -target){
+        while(opModeIsActive() && FL.getCurrentPosition() > -target){
             idle();
         }
         stopDrive();

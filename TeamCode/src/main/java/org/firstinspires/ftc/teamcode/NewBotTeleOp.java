@@ -34,6 +34,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.GyroSensor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 @TeleOp(name = "New Bot TeleOp", group = "TeleOp")
@@ -42,7 +43,7 @@ import com.qualcomm.robotcore.util.Range;
  * <p>
  * Enables control of the robot via the gamepad
  */
-public class NewMecanum extends OpMode {
+public class NewBotTeleOp extends OpMode {
     //Gyro thread stuff
 
     GyroSensor gyro;
@@ -52,6 +53,8 @@ public class NewMecanum extends OpMode {
     DcMotor BR;
     DcMotor Shooter;
     DcMotor Harvester;
+    Servo buttonPusher;
+    double rightPos = .3;
 
     //sets default Powers
     double shooterPower = 1;
@@ -60,7 +63,7 @@ public class NewMecanum extends OpMode {
     /**
      * Constructor
      */
-    public NewMecanum()
+    public NewBotTeleOp()
     {
 
     }
@@ -80,10 +83,12 @@ public class NewMecanum extends OpMode {
         FR = hardwareMap.dcMotor.get("FR");
         BL = hardwareMap.dcMotor.get("BL");
         BR = hardwareMap.dcMotor.get("BR");
+        buttonPusher = hardwareMap.servo.get("beaconPush");
         FR.setDirection(DcMotor.Direction.REVERSE);
         BR.setDirection(DcMotor.Direction.REVERSE);
         Harvester.setDirection(DcMotor.Direction.REVERSE);
         Shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        buttonPusher.setPosition(rightPos);
         gyro.calibrate();
         while(gyro.isCalibrating()){}
     }
