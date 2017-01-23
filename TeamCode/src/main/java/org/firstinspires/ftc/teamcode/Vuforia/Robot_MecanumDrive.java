@@ -1,9 +1,7 @@
 package org.firstinspires.ftc.teamcode.Vuforia;
 
-import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 /**
@@ -14,12 +12,13 @@ import com.qualcomm.robotcore.util.Range;
  * This hardware class assumes the following device names have been configured on the robot:
  * Note:  All names are lower case and some have single spaces between words.
  *
- * Motor channel:  Left  drive motor:        "left drive"
- * Motor channel:  Right drive motor:        "right drive"
- * Motor channel:  Rear  drive motor:        "back drive"
+ * Motor channel:  Front Left  drive motor:        "FL"
+ * Motor channel:  Front Right drive motor:        "FR"
+ * Motor channel:  Back Left  drive motor:        "BL"
+ * Motor channel:  Back Right drive motor:        "BR"
  *
- * These motors correspond to three drive locations spaced 120 degrees around a circular robot.
- * Each motor is attached to an omni-wheel. Two wheels are in front, and one is at the rear of the robot.
+ * These motors correspond to the four drive motors, two on either side of the robot. This is a normal
+ * mecanum drive setup, with the wheels placed in a square pattern.
  *
  * Robot motion is defined in three different axis motions:
  * - Axial    Forward/Backwards      +ve = Forward
@@ -28,21 +27,22 @@ import com.qualcomm.robotcore.util.Range;
  */
 
 
-public class Robot_OmniDrive
+public class Robot_MecanumDrive
 {
     // Private Members
     private LinearOpMode myOpMode;
 
-    private DcMotor  leftDrive      = null;
-    private DcMotor  rightDrive     = null;
-    private DcMotor  backDrive      = null;
+    private DcMotor  FR = null;
+    private DcMotor  FL = null;
+    private DcMotor  BR = null;
+    private DcMotor  BL = null;
 
     private double  driveAxial      = 0 ;   // Positive is forward
     private double  driveLateral    = 0 ;   // Positive is right
     private double  driveYaw        = 0 ;   // Positive is CCW
 
     /* Constructor */
-    public Robot_OmniDrive(){
+    public Robot_MecanumDrive(){
 
     }
 
@@ -54,16 +54,20 @@ public class Robot_OmniDrive
         myOpMode = opMode;
 
         // Define and Initialize Motors
-        leftDrive        = myOpMode.hardwareMap.get(DcMotor.class, "left drive");
-        rightDrive       = myOpMode.hardwareMap.get(DcMotor.class, "right drive");
-        backDrive        = myOpMode.hardwareMap.get(DcMotor.class, "back drive");
+        FR = myOpMode.hardwareMap.get(DcMotor.class, "FR");
+        BR = myOpMode.hardwareMap.get(DcMotor.class, "BR");
+        FL = myOpMode.hardwareMap.get(DcMotor.class, "FL");
+        BL = myOpMode.hardwareMap.get(DcMotor.class, "BL");
 
-        leftDrive.setDirection(DcMotor.Direction.FORWARD); // Positive input rotates counter clockwise
-        rightDrive.setDirection(DcMotor.Direction.FORWARD);// Positive input rotates counter clockwise
-        backDrive.setDirection(DcMotor.Direction.FORWARD); // Positive input rotates counter clockwise
+        FR.setDirection(DcMotor.Direction.REVERSE); // Positive input rotates counter clockwise
+        BR.setDirection(DcMotor.Direction.REVERSE);// Positive input rotates counter clockwise
+        FL.setDirection(DcMotor.Direction.FORWARD);
+        BL.setDirection(DcMotor.Direction.FORWARD);
 
         //use RUN_USING_ENCODERS because encoders are installed.
-        setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //ENCODERS NOT CURRENTLY WORKING-----------------------
+        setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Stop all robot motion by setting each axis value to zero
         moveRobot(0,0,0) ;

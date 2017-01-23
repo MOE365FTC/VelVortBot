@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.FTCVuforiaDemo;
+package org.firstinspires.ftc.teamcode.Vuforia;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.robot.Robot;
