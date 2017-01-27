@@ -59,7 +59,7 @@ public class NewBotTeleOp extends OpMode {
     //sets default Powers
     double shooterPower = 1;
     double harvesterPower = 1;
-    int shooterRot = 1573;
+    int shooterRot = 1100;
     /**
      * Constructor
      */
@@ -86,6 +86,10 @@ public class NewBotTeleOp extends OpMode {
         buttonPusher = hardwareMap.servo.get("beaconPush");
         FR.setDirection(DcMotor.Direction.REVERSE);
         BR.setDirection(DcMotor.Direction.REVERSE);
+        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         Harvester.setDirection(DcMotor.Direction.REVERSE);
         Shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         buttonPusher.setPosition(rightPos);

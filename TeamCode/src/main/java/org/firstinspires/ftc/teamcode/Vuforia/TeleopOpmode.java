@@ -61,10 +61,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 @TeleOp(name="Vuforia Tracking Demo", group="main")
 public class TeleopOpmode extends LinearOpMode {
 
-    final double TARGET_DISTANCE =  400.0;    // Hold robot's center 400 mm from target
+    final double TARGET_DISTANCE =  500;    // Hold robot's center 100 mm from target
 
     /* Declare OpMode members. */
-    Robot_OmniDrive     robot    = new Robot_OmniDrive();   // Use Omni-Directional drive system
+    Robot_MecanumDrive     robot    = new Robot_MecanumDrive();   // Use Omni-Directional drive system
     Robot_Navigation    nav      = new Robot_Navigation();  // Use Image Tracking library
 
     @Override

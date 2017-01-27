@@ -81,6 +81,10 @@ public class RedAutonomous extends LinearOpMode {
         FR = hardwareMap.dcMotor.get("FR");
         BL = hardwareMap.dcMotor.get("BL");
         BR = hardwareMap.dcMotor.get("BR");
+        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         beaconPusher = hardwareMap.servo.get("beaconPush");
         FR.setDirection(DcMotor.Direction.REVERSE);
         BR.setDirection(DcMotor.Direction.REVERSE);
@@ -123,7 +127,7 @@ public class RedAutonomous extends LinearOpMode {
         }
         stopDrive();
         Thread.sleep(100);
-        moveRightInches(1,0.5);//re-center on beacon
+        moveRightInches(2,0.5);//re-center on beacon
         pointToOneEighty();//re-align to zero
         Thread.sleep(100);
         double wallDist = ultrasonic.getDistance(DistanceUnit.INCH);//store distance from wall
@@ -133,8 +137,8 @@ public class RedAutonomous extends LinearOpMode {
             moveBackwardInches(wallDist-6,0.3);//move in
         pointToOneEighty();
         pushBeaconRed();//Press beacon after making decision of side
+        moveForwardInches(12,0.2);
         pointToOneEighty();//realign to zero
-        moveForwardInches(24,0.2);
         Thread.sleep(250);
         beaconPusher.setPosition(1);
         moveLeftInches(36,0.8);//move towards second beacon
@@ -146,9 +150,26 @@ public class RedAutonomous extends LinearOpMode {
         stopDrive();
         startLeft(0.6);//move to second white line
         floorReading = lineSensor.green();
+        int startHeading = gyro.getIntegratedZValue();
+        double turnSpeed = 0.05;
         while(opModeIsActive() && lineSensor.green() <= floorReading){
             if(ultrasonic.getDistance(DistanceUnit.INCH) > 15) {
-                startBackward(0.3);
+                startBackward(0.2);
+            }
+            else if(ultrasonic.getDistance(DistanceUnit.INCH) < 6){
+                startForward(0.2);
+            }
+            else if(gyro.getIntegratedZValue() > startHeading + 5) {//If we've turned > 5 degrees CCW, turn CW
+                FR.setPower(FR.getPower() - turnSpeed);
+                BR.setPower(BR.getPower() - turnSpeed);
+                FL.setPower(FL.getPower() + turnSpeed);
+                BL.setPower(BL.getPower() + turnSpeed);
+            }
+            else if(gyro.getIntegratedZValue() < startHeading - 5){//If we've turned > 5 degrees CW, turn CCW
+                FR.setPower(FR.getPower() + turnSpeed);
+                BR.setPower(BR.getPower() + turnSpeed);
+                FL.setPower(FL.getPower() - turnSpeed);
+                BL.setPower(BL.getPower() - turnSpeed);
             }
             else
                 startLeft(0.6);
@@ -156,7 +177,7 @@ public class RedAutonomous extends LinearOpMode {
         }
         stopDrive();
         Thread.sleep(100);
-        moveRightInches(2,0.5);//recenter on white line
+        moveRightInches(3,0.5);//recenter on white line
         pointToOneEighty();//realign to zero
         Thread.sleep(100);
         wallDist = ultrasonic.getDistance(DistanceUnit.INCH);//store distance from wall
@@ -169,7 +190,7 @@ public class RedAutonomous extends LinearOpMode {
         pushBeaconRed();//press second beacon
         moveForwardInches(5,1);
         rightTurn(15,0.5);
-        moveForwardInches(55,1);
+        moveForwardInches(49,1);
     }
 
     public void pushBeaconRed() throws  InterruptedException{
@@ -288,22 +309,54 @@ public class RedAutonomous extends LinearOpMode {
 
 
     public void moveRightInches(double inches, double speed){
+        double turnSpeed = 0.05;
         double target = inches * strafeTicsPerInch;
+        int startHeading = gyro.getIntegratedZValue();
         FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         startRight(speed);
         while(opModeIsActive() && FL.getCurrentPosition() < target){
+            if(gyro.getIntegratedZValue() > startHeading + 5) {//If we've turned > 5 degrees CCW, turn CW
+                FR.setPower(FR.getPower() - turnSpeed);
+                BR.setPower(BR.getPower() - turnSpeed);
+                FL.setPower(FL.getPower() + turnSpeed);
+                BL.setPower(BL.getPower() + turnSpeed);
+            }
+            else if(gyro.getIntegratedZValue() < startHeading - 5){//If we've turned > 5 degrees CW, turn CCW
+                FR.setPower(FR.getPower() + turnSpeed);
+                BR.setPower(BR.getPower() + turnSpeed);
+                FL.setPower(FL.getPower() - turnSpeed);
+                BL.setPower(BL.getPower() - turnSpeed);
+            }
+            else
+                startRight(speed);
             idle();
         }
         stopDrive();
     }
 
     public void moveLeftInches(double inches, double speed){
-        double target = -inches * strafeTicsPerInch;
+        double turnSpeed = 0.05;
+        double target = inches * strafeTicsPerInch;
+        int startHeading = gyro.getIntegratedZValue();
         FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         startLeft(speed);
-        while(opModeIsActive() && FL.getCurrentPosition() > target){
+        while(opModeIsActive() && FL.getCurrentPosition() > -target){
+            if(gyro.getIntegratedZValue() > startHeading + 5) {//If we've turned > 5 degrees CCW, turn CW
+                FR.setPower(FR.getPower() - turnSpeed);
+                BR.setPower(BR.getPower() - turnSpeed);
+                FL.setPower(FL.getPower() + turnSpeed);
+                BL.setPower(BL.getPower() + turnSpeed);
+            }
+            else if(gyro.getIntegratedZValue() < startHeading - 5){//If we've turned > 5 degrees CW, turn CCW
+                FR.setPower(FR.getPower() + turnSpeed);
+                BR.setPower(BR.getPower() + turnSpeed);
+                FL.setPower(FL.getPower() - turnSpeed);
+                BL.setPower(BL.getPower() - turnSpeed);
+            }
+            else
+                startLeft(speed);
             idle();
         }
         stopDrive();

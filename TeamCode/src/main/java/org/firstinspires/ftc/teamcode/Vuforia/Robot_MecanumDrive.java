@@ -1,7 +1,12 @@
 package org.firstinspires.ftc.teamcode.Vuforia;
 
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.I2cAddr;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
 /**
@@ -32,10 +37,29 @@ public class Robot_MecanumDrive
     // Private Members
     private LinearOpMode myOpMode;
 
-    private DcMotor  FR = null;
-    private DcMotor  FL = null;
-    private DcMotor  BR = null;
-    private DcMotor  BL = null;
+    public DcMotor  FR = null;
+    public DcMotor  FL = null;
+    public DcMotor  BR = null;
+    public DcMotor  BL = null;
+    public DcMotor Shooter = null;
+    public DcMotor Harvester = null;
+
+    public Servo beaconPusher = null;
+
+    ModernRoboticsI2cGyro gyro;
+    ColorSensor beaconSensor;
+
+    //sets default Powers
+    double shooterPower = 1;
+    double harvesterPower = 1;
+    int shooterRot = 1100;
+
+    //Needed Values
+    double ticsPerInch = 38.5;
+    double strafeTicsPerInch = 53;
+
+    double leftPos = .3;
+    double rightPos = 0;
 
     private double  driveAxial      = 0 ;   // Positive is forward
     private double  driveLateral    = 0 ;   // Positive is right
@@ -58,22 +82,31 @@ public class Robot_MecanumDrive
         BR = myOpMode.hardwareMap.get(DcMotor.class, "BR");
         FL = myOpMode.hardwareMap.get(DcMotor.class, "FL");
         BL = myOpMode.hardwareMap.get(DcMotor.class, "BL");
-
+        Shooter = myOpMode.hardwareMap.get(DcMotor.class, "Sh");
+        Harvester = myOpMode.hardwareMap.get(DcMotor.class, "Ha");
+        beaconPusher = myOpMode.hardwareMap.servo.get("beaconPush");
+        gyro = (ModernRoboticsI2cGyro)myOpMode.hardwareMap.gyroSensor.get("gyro");
+        beaconSensor = myOpMode.hardwareMap.colorSensor.get("beaconSense");
+        beaconSensor.setI2cAddress(I2cAddr.create8bit(0x3c));
+        beaconPusher.setPosition(rightPos);
         FR.setDirection(DcMotor.Direction.REVERSE); // Positive input rotates counter clockwise
         BR.setDirection(DcMotor.Direction.REVERSE);// Positive input rotates counter clockwise
         FL.setDirection(DcMotor.Direction.FORWARD);
         BL.setDirection(DcMotor.Direction.FORWARD);
-
+        Harvester.setDirection(DcMotor.Direction.REVERSE);
+        Shooter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         //use RUN_USING_ENCODERS because encoders are installed.
         //setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         //ENCODERS NOT CURRENTLY WORKING-----------------------
         setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
         // Stop all robot motion by setting each axis value to zero
         moveRobot(0,0,0) ;
+        gyro.calibrate();
+        while(gyro.isCalibrating()){
+        }
     }
 
-    public void manualDrive()  {
+    public void manualDrive()  {//used in TeleOp
         // In this mode the Left stick moves the robot fwd & back, and Right & Left.
         // The Right stick rotates CCW and CW.
 
@@ -113,28 +146,33 @@ public class Robot_MecanumDrive
      */
     public void moveRobot() {
         // calculate required motor speeds to acheive axis motions
-        double back = driveYaw + driveLateral;
-        double left = driveYaw - driveAxial - (driveLateral * 0.5);
-        double right = driveYaw + driveAxial - (driveLateral * 0.5);
+
+        double FRP = driveAxial - driveLateral + driveYaw;
+        double FLP = driveAxial + driveLateral - driveYaw;
+        double BRP = driveAxial + driveLateral + driveYaw;
+        double BLP = driveAxial - driveLateral - driveYaw;
 
         // normalize all motor speeds so no values exceeds 100%.
-        double max = Math.max(Math.abs(back), Math.abs(right));
-        max = Math.max(max, Math.abs(left));
+        double max = Math.max(Math.abs(FRP), Math.abs(FLP));
+        max = Math.max(max, Math.abs(BRP));
+        max = Math.max(max,Math.abs(BLP));
         if (max > 1.0)
         {
-            back /= max;
-            right /= max;
-            left /= max;
+            FRP /= max;
+            FLP /= max;
+            BRP /= max;
+            BLP /= max;
         }
 
         // Set drive motor power levels.
-        backDrive.setPower(back);
-        leftDrive.setPower(left);
-        rightDrive.setPower(right);
+        FR.setPower(FRP);
+        BR.setPower(BRP);
+        FL.setPower(FLP);
+        BL.setPower(BLP);
 
         // Display Telemetry
         myOpMode.telemetry.addData("Axes  ", "A[%+5.2f], L[%+5.2f], Y[%+5.2f]", driveAxial, driveLateral, driveYaw);
-        myOpMode.telemetry.addData("Wheels", "L[%+5.2f], R[%+5.2f], B[%+5.2f]", left, right, back);
+        //myOpMode.telemetry.addData("Wheels", "L[%+5.2f], R[%+5.2f], B[%+5.2f]", left, right, back);
     }
 
 
@@ -148,9 +186,10 @@ public class Robot_MecanumDrive
      * @param mode    Desired Motor mode.
      */
     public void setMode(DcMotor.RunMode mode ) {
-        leftDrive.setMode(mode);
-        rightDrive.setMode(mode);
-        backDrive.setMode(mode);
+        FR.setMode(mode);
+        BR.setMode(mode);
+        FL.setMode(mode);
+        BL.setMode(mode);
     }
 }
 

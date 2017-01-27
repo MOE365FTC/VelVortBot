@@ -41,19 +41,19 @@ public class Robot_Navigation
 {
     // Constants
     private static final int     MAX_TARGETS    =   4;
-    private static final double  ON_AXIS        =  10;      // Within 1.0 cm of target center-line
-    private static final double  CLOSE_ENOUGH   =  20;      // Within 2.0 cm of final target standoff
+    private static final double  ON_AXIS        =  50;      // Within 5.0 cm of target center-line DEFAULT 1
+    private static final double  CLOSE_ENOUGH   =  50;      // Within 5.0 cm of final target standoff DEFAULT 2
 
     // Select which camera you want use.  The FRONT camera is the one on the same side as the screen.  Alt. is BACK
     private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = VuforiaLocalizer.CameraDirection.FRONT;
 
-    public  static final double  YAW_GAIN       =  0.018;   // Rate at which we respond to heading error
-    public  static final double  LATERAL_GAIN   =  0.0027;  // Rate at which we respond to off-axis error
-    public  static final double  AXIAL_GAIN     =  0.0017;  // Rate at which we respond to target distance errors
+    public  static final double  YAW_GAIN       =  0.0005;   // Rate at which we respond to heading error 0.018 DEFAULT
+    public  static final double  LATERAL_GAIN   =  0.0027;  // Rate at which we respond to off-axis error 0.0027 DEFAULT
+    public  static final double  AXIAL_GAIN     =  0.0009;  // Rate at which we respond to target distance errors 0.0017 DEF
 
     /* Private class members. */
     private LinearOpMode        myOpMode;       // Access to the OpMode object
-    private Robot_OmniDrive     myRobot;        // Access to the Robot hardware
+    private Robot_MecanumDrive     myRobot;     // Access to the Robot hardware
     private VuforiaTrackables   targets;        // List of active targets
 
     // Navigation data is only valid if targetFound == true;
@@ -122,6 +122,19 @@ public class Robot_Navigation
      * @return true if we are close to target
      * @param standOffDistance how close do we get the center of the robot to target (in mm)
      */
+    public boolean cruiseControl(double standOffDistance){
+        boolean closeEnough;
+        double Y  = (-relativeBearing * YAW_GAIN);
+        myRobot.setYaw(Y);
+        double L  =(-robotY * LATERAL_GAIN);
+        myRobot.setLateral(L);
+        double A  = ((robotX + standOffDistance) * AXIAL_GAIN);
+        myRobot.setAxial(A);
+        closeEnough = ( (Math.abs(robotX + standOffDistance) < CLOSE_ENOUGH) &&
+                (Math.abs(robotY) < ON_AXIS));
+        return closeEnough;
+    }
+    /*
     public boolean cruiseControl(double standOffDistance) {
         boolean closeEnough;
 
@@ -145,6 +158,7 @@ public class Robot_Navigation
 
         return (closeEnough);
     }
+    */
 
 
     /***
@@ -152,7 +166,7 @@ public class Robot_Navigation
      * @param opMode    pointer to OpMode
      * @param robot     pointer to Robot hardware class
      */
-    public void initVuforia(LinearOpMode opMode, Robot_OmniDrive robot) {
+    public void initVuforia(LinearOpMode opMode, Robot_MecanumDrive robot) {
 
         // Save reference to OpMode and Hardware map
         myOpMode = opMode;
@@ -222,15 +236,15 @@ public class Robot_Navigation
          * In this example, it is centered (left to right), but 110 mm forward of the middle of the robot, and 200 mm above ground level.
          */
 
-        final int CAMERA_FORWARD_DISPLACEMENT  = 110;   // Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 200;   // Camera is 200 mm above ground
-        final int CAMERA_LEFT_DISPLACEMENT     = 0;     // Camera is ON the robots center line
+        final int CAMERA_FORWARD_DISPLACEMENT  = -240;   // Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 136;   // Camera is 200 mm above ground
+        final int CAMERA_LEFT_DISPLACEMENT     = -28;     // Camera is ON the robots center line
 
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
             .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
             .multiplied(Orientation.getRotationMatrix(
                     AxesReference.EXTRINSIC, AxesOrder.YZX,
-                    AngleUnit.DEGREES, CAMERA_CHOICE == VuforiaLocalizer.CameraDirection.FRONT ? 90 : -90, 0, 0));
+                    AngleUnit.DEGREES, CAMERA_CHOICE == VuforiaLocalizer.CameraDirection.FRONT ? -90 : -90, 0, 0));
 
         // Set the all the targets to have the same location and camera orientation
         for (VuforiaTrackable trackable : allTrackables)
