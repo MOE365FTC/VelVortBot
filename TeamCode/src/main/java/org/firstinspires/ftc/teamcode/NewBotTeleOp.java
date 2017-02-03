@@ -53,13 +53,17 @@ public class NewBotTeleOp extends OpMode {
     DcMotor BR;
     DcMotor Shooter;
     DcMotor Harvester;
+    DcMotor lights;
     Servo buttonPusher;
     double rightPos = .3;
 
     //sets default Powers
     double shooterPower = 1;
     double harvesterPower = 1;
-    int shooterRot = 1100;
+    int shooterRot = 1000;
+
+    boolean left_stick_pressed = false;
+    boolean robotCentric = false;
     /**
      * Constructor
      */
@@ -83,6 +87,7 @@ public class NewBotTeleOp extends OpMode {
         FR = hardwareMap.dcMotor.get("FR");
         BL = hardwareMap.dcMotor.get("BL");
         BR = hardwareMap.dcMotor.get("BR");
+        lights = hardwareMap.dcMotor.get("lights");
         buttonPusher = hardwareMap.servo.get("beaconPush");
         FR.setDirection(DcMotor.Direction.REVERSE);
         BR.setDirection(DcMotor.Direction.REVERSE);
@@ -114,12 +119,26 @@ public class NewBotTeleOp extends OpMode {
         directionY = Range.clip(directionY, -1, 1);
         directionX = Range.clip(directionX, -1, 1);
         turnX = Range.clip(turnX, -1, 1);
-
+        double FRP;
+        double FLP;
+        double BRP;
+        double BLP;
+        double lightsPower;
         //Mecanum algorithm
-        double FRP = directionY - directionX - turnX;
-        double FLP = directionY + directionX + turnX;
-        double BRP = directionY + directionX - turnX;
-        double BLP = directionY - directionX + turnX;
+        if(!robotCentric) {
+            FRP = directionY - directionX - turnX;
+            FLP = directionY + directionX + turnX;
+            BRP = directionY + directionX - turnX;
+            BLP = directionY - directionX + turnX;
+            lightsPower = 0;
+        }
+        else{
+            FRP = rawDirectionY - rawDirectionX - turnX;
+            FLP = rawDirectionY + rawDirectionX + turnX;
+            BRP = rawDirectionY + rawDirectionX - turnX;
+            BLP = rawDirectionY - rawDirectionX + turnX;
+            lightsPower = 1;
+        }
 
         // clip the right/left values so that the values never exceed +/- 1
         FRP = scaleInput(Range.clip(FRP,-1,1));
@@ -127,37 +146,21 @@ public class NewBotTeleOp extends OpMode {
         BRP = scaleInput(Range.clip(BRP,-1,1));
         BLP = scaleInput(Range.clip(BLP,-1,1));
 
-        //Robot-centric drive
-        if(gamepad1.dpad_down){
-            FRP = -1;
-            FLP = -1;
-            BRP = -1;
-            BLP = -1;
-        }
-        else if (gamepad1.dpad_up) {
-            FRP = 1;
-            FLP = 1;
-            BRP = 1;
-            BLP = 1;
-        }
-        else if (gamepad1.dpad_right) {
-            FRP = -1;
-            FLP = 1;
-            BRP = 1;
-            BLP = -1;
-        }
-        else if (gamepad1.dpad_left) {
-            FRP = 1;
-            FLP = -1;
-            BRP = -1;
-            BLP = 1;
-        }
-
         // write the values to the motors
         FL.setPower(FLP);
         FR.setPower(FRP);
         BR.setPower(BRP);
         BL.setPower(BLP);
+        lights.setPower(lightsPower);
+
+        //toggle field centric
+        if(gamepad1.left_stick_button && !left_stick_pressed){
+            left_stick_pressed = true;
+            robotCentric = !robotCentric;
+        }
+        else if(!gamepad1.left_stick_button){
+            left_stick_pressed = false;
+        }
 
         //resets gyro value
         if(gamepad1.y)
@@ -166,6 +169,7 @@ public class NewBotTeleOp extends OpMode {
         if(gamepad1.right_trigger > .5) {
             int rotationTarget = Shooter.getCurrentPosition() + shooterRot;
             while ((Shooter.getCurrentPosition() < rotationTarget)) {
+                Harvester.setPower(0);
                 Shooter.setPower(shooterPower);
             }
             Shooter.setPower(0);

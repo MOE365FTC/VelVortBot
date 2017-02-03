@@ -34,7 +34,6 @@ package org.firstinspires.ftc.teamcode.Vuforia;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -61,12 +60,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  *
  */
 
-@Autonomous(name="Red Vuforia Auton", group="VAuton")
-public class RedAutonV extends LinearOpMode {
+@Autonomous(name="Blue Vuforia Auton", group="VAuton")
+public class BlueAutonV extends LinearOpMode {
 
     final double TARGET_DISTANCE =  500;    // Hold robot's center 100 mm from target
-    final int WALL_ANGLE = 180;
-    final int SHOOT_ANGLE = 30;
+    final int WALL_ANGLE = 0;
     /* Declare OpMode members. */
     Robot_MecanumDrive     robot    = new Robot_MecanumDrive();   // Use Omni-Directional drive system
     Robot_Navigation    nav      = new Robot_Navigation();  // Use Image Tracking library
@@ -86,22 +84,14 @@ public class RedAutonV extends LinearOpMode {
         telemetry.addData(">","READY");
         telemetry.update();
         waitForStart();
-        robot.Harvester.setPower(robot.harvesterPower);
-        runtime.reset();
-        while(opModeIsActive() && runtime.seconds() < 0.5){
-            idle();
-        }
-        robot.Harvester.setPower(0);
-        pointToAngle(SHOOT_ANGLE,0.4);
-        pointToAngle(SHOOT_ANGLE);
         shootBalls();
-        pointToAngle(135,0.6);
-        pointToAngle(135);
-        moveBackwardInches(72,0.4);
+        pointToAngle(50,0.6);
+        pointToAngle(50);
+        moveBackwardInches(52,0.4);
         pointToAngle(WALL_ANGLE,0.4);
         pointToAngle(WALL_ANGLE);
         startBackward(0.2);
-        while(opModeIsActive() && !nav.targetIsVisible(3)){//BACK UNTIL WE SEE RED NEAR
+        while(opModeIsActive() && !nav.targetIsVisible(0)){//BACK UNTIL WE SEE BLUE NEAR
             idle();
         }
         stopDrive();
@@ -113,18 +103,18 @@ public class RedAutonV extends LinearOpMode {
             robot.moveRobot();
         }
         pointToAngle(WALL_ANGLE-2);
-        pushBeaconRed();
+        pushBeaconBlue();
         moveForwardInches(36,0.3);
         robot.beaconPusher.setPosition(robot.rightPos);
         Thread.sleep(100);
-        pointToAngle(WALL_ANGLE - 90, 0.3);
-        pointToAngle(WALL_ANGLE - 90);
+        pointToAngle(WALL_ANGLE + 90, 0.3);
+        pointToAngle(WALL_ANGLE + 90);
         Thread.sleep(100);
         moveBackwardInches(50,0.4);
         Thread.sleep(100);
         pointToAngle(WALL_ANGLE,0.3);
         startBackward(0.2);
-        while(opModeIsActive() && !nav.targetIsVisible(1)){
+        while(opModeIsActive() && !nav.targetIsVisible(2)){
             idle();
         }
         stopDrive();
@@ -134,10 +124,10 @@ public class RedAutonV extends LinearOpMode {
             robot.moveRobot();
         }
         pointToAngle(WALL_ANGLE-2);
-        pushBeaconRed();
+        pushBeaconBlue();
         startForward(.6);
-        pointToAngle(WALL_ANGLE - 22,0.3);
-        moveForwardInches(48,0.8);
+        pointToAngle(WALL_ANGLE + 22,0.3);
+        moveForwardInches(52,0.8);
     }
 
     public void shootBalls() throws InterruptedException{
@@ -329,8 +319,8 @@ public class RedAutonV extends LinearOpMode {
         }
     }
 
-    public void pushBeaconRed() throws  InterruptedException{
-        if(robot.beaconSensor.red() > robot.beaconSensor.blue()) {
+    public void pushBeaconBlue() throws  InterruptedException{
+        if(robot.beaconSensor.red() < robot.beaconSensor.blue()) {
             robot.beaconPusher.setPosition(robot.leftPos);
             runtime.reset();
             startBackward(0.2);

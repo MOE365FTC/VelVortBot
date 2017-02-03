@@ -52,7 +52,7 @@ public class Robot_MecanumDrive
     //sets default Powers
     double shooterPower = 1;
     double harvesterPower = 1;
-    int shooterRot = 1100;
+    int shooterRot = 1050;
 
     //Needed Values
     double ticsPerInch = 38.5;
