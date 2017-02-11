@@ -64,6 +64,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class BlueAutonV extends LinearOpMode {
 
     final double TARGET_DISTANCE =  500;    // Hold robot's center 100 mm from target
+    final double TARGET_DISTANCE_CLOSER = 300;
     final int WALL_ANGLE = 0;
     /* Declare OpMode members. */
     Robot_MecanumDrive     robot    = new Robot_MecanumDrive();   // Use Omni-Directional drive system
@@ -85,8 +86,8 @@ public class BlueAutonV extends LinearOpMode {
         telemetry.update();
         waitForStart();
         shootBalls();
-        pointToAngle(50,0.6);
-        pointToAngle(50);
+        pointToAngle(50,0.8);
+        pointToAngle(50,0.35);
         moveBackwardInches(52,0.4);
         pointToAngle(WALL_ANGLE,0.4);
         pointToAngle(WALL_ANGLE);
@@ -98,11 +99,11 @@ public class BlueAutonV extends LinearOpMode {
         Thread.sleep(100);
         runtime.reset();
         //moves us into position in front of beacon
-        while(opModeIsActive() && nav.targetsAreVisible() && !nav.cruiseControl(TARGET_DISTANCE) && runtime.seconds() < 3){
-            nav.cruiseControl(TARGET_DISTANCE);
+        while(opModeIsActive() && nav.targetsAreVisible() && !nav.cruiseControl(TARGET_DISTANCE_CLOSER) && runtime.seconds() < 3){
+            nav.cruiseControl(TARGET_DISTANCE_CLOSER);
             robot.moveRobot();
         }
-        pointToAngle(WALL_ANGLE-2);
+        //pointToAngle(WALL_ANGLE-2);
         pushBeaconBlue();
         moveForwardInches(36,0.3);
         robot.beaconPusher.setPosition(robot.rightPos);
@@ -123,11 +124,13 @@ public class BlueAutonV extends LinearOpMode {
             nav.cruiseControl(TARGET_DISTANCE);
             robot.moveRobot();
         }
-        pointToAngle(WALL_ANGLE-2);
+        pointToAngle(WALL_ANGLE);
+        Thread.sleep(100);
         pushBeaconBlue();
         startForward(.6);
+        Thread.sleep(500);
         pointToAngle(WALL_ANGLE + 22,0.3);
-        moveForwardInches(52,0.8);
+        moveForwardInches(48,0.8);
     }
 
     public void shootBalls() throws InterruptedException{
@@ -328,8 +331,8 @@ public class BlueAutonV extends LinearOpMode {
                 idle();
             }
             stopDrive();
-            robot.FR.setPower(-1);
-            robot.BR.setPower(-1);
+            robot.FR.setPower(-0.5);
+            robot.BR.setPower(-0.5);
             while(opModeIsActive() && runtime.seconds() < 1.5){
                 idle();
             }
@@ -343,8 +346,8 @@ public class BlueAutonV extends LinearOpMode {
                 idle();
             }
             stopDrive();
-            robot.FL.setPower(-1);
-            robot.BL.setPower(-1);
+            robot.FL.setPower(-0.5);
+            robot.BL.setPower(-0.5);
             while(opModeIsActive() && runtime.seconds() < 1.5){
                 idle();
             }

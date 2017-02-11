@@ -44,7 +44,7 @@ import com.qualcomm.robotcore.util.Range;
  * <p>
  * Enables control of the robot via the gamepad
  */
-public class OldBotTeleOp extends OpMode {
+public class OldBotTeleop extends OpMode {
     //Gyro thread stuff
 
     GyroSensor gyro;
@@ -61,7 +61,7 @@ public class OldBotTeleOp extends OpMode {
     /**
      * Constructor
      */
-    public OldBotTeleOp()
+    public OldBotTeleop()
     {
 
     }

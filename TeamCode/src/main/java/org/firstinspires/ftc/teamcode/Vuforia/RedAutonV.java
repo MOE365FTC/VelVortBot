@@ -338,8 +338,8 @@ public class RedAutonV extends LinearOpMode {
                 idle();
             }
             stopDrive();
-            robot.FR.setPower(-1);
-            robot.BR.setPower(-1);
+            robot.FR.setPower(-0.5);
+            robot.BR.setPower(-0.5);
             while(opModeIsActive() && runtime.seconds() < 1.5){
                 idle();
             }
@@ -353,8 +353,8 @@ public class RedAutonV extends LinearOpMode {
                 idle();
             }
             stopDrive();
-            robot.FL.setPower(-1);
-            robot.BL.setPower(-1);
+            robot.FL.setPower(-0.5);
+            robot.BL.setPower(-0.5);
             while(opModeIsActive() && runtime.seconds() < 1.5){
                 idle();
             }

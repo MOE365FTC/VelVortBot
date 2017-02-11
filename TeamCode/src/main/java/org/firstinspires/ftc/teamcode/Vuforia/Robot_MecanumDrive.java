@@ -58,8 +58,8 @@ public class Robot_MecanumDrive
     double ticsPerInch = 38.5;
     double strafeTicsPerInch = 53;
 
-    double leftPos = .3;
-    double rightPos = 0;
+    double leftPos = .4;
+    double rightPos = 0.1;
 
     private double  driveAxial      = 0 ;   // Positive is forward
     private double  driveLateral    = 0 ;   // Positive is right
